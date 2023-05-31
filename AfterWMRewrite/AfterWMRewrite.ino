@@ -89,7 +89,7 @@ void setup() {
 void loop() {
     maintainEthernet();
     // maintainCCIO();
-    motorStatus();
+    monitorMotorStatus();
     monitorIO();
     // monitorCCIO();
     events.processInput(handleEvent);

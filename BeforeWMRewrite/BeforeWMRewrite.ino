@@ -54,7 +54,7 @@ void handleEvent(strMap event) {
         if (command == "MOTOR_RESET_ALERTS") {
             motor->ClearAlerts();
         } else if (command == "MOTOR_STATUS") {
-            getMotorStatus(motorName); // would make more sense to have it return the status and then dispatch the event here
+            getMotorStatus(motorName);
         } else if (command.indexOf("MOVE") != -1) {
             // check if motor is enabled
             if (!motor->StatusReg().bit.Enabled) {
@@ -84,13 +84,9 @@ void handleEvent(strMap event) {
 
 
 void setup() {
-    Serial.begin(9600);
     // Wait for serial to initialize or timeout after 5 seconds.
-    unsigned long start = millis();
-    while (!Serial && millis() - start < 5000) {}
-    Serial.println("Setup starting");
-    
     setupConnectivity();
+    Serial.println("Setup starting");
     setupIO();
     // setupCCIO();
     setupMotors();
@@ -100,7 +96,7 @@ void setup() {
 void loop() {
     maintainEthernet();
     // maintainCCIO();
-    motorStatus();
+    monitorMotorStatus();
     monitorIO();
     // monitorCCIO();
     events.processInput(handleEvent);

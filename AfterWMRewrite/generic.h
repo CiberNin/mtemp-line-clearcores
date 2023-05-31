@@ -22,12 +22,29 @@ void setupConnectivity()
 {
     // Ethernet
     EthernetMgr.Setup();
+    EthernetMgr.LocalIp(local);
     EthernetMgr.NetmaskIp(netmask);
     EthernetMgr.GatewayIp(gateway);
     EthernetMgr.DnsIp(dns);
-    EthernetMgr.LocalIp(local);
     // Serial
     Serial.begin(serial_baud);
+    unsigned long start = millis();
+    while (!Serial && millis() - start < 5000) {}
+    Serial.println("Ethernet Configured");
+    Serial.print(" Local IP: ");
+    Serial.println(local.StringValue());
+    Serial.print(" Remote IP: ");
+    Serial.print(remote_ip);
+    Serial.print(" Remote Port: ");
+    Serial.println(remote_port);
+    Serial.print(" Netmask: ");
+    Serial.println(netmask.StringValue());
+    Serial.print(" Gateway: ");
+    Serial.println(gateway.StringValue());
+    Serial.print(" DNS: ");
+    Serial.println(dns.StringValue());
+
+
 }
 
 // Setup IO pin modes
@@ -238,72 +255,6 @@ public:
 
 Status status;
 
-// Recover if connection lost or cable unplugged.
-void maintainEthernet()
-{
-    // Physical ethernet cable
-    if (!EthernetMgr.PhyLinkActive()) {
-        Serial.println("The Ethernet cable is unplugged...");
-        client.Close(); // Just to be sure
-        while (!EthernetMgr.PhyLinkActive()) { }
-        Serial.println("Ethernet cable plugged in");
-    }
-
-    if (!client.Connected()) {
-        uint32_t connection_lost_timestamp = millis();
-        client.Close(); // Just to be sure
-
-        // Immediately stop all motors.
-        for (const auto& motorPair : motors) {
-            motorPair.second->MoveStopAbrupt();
-        }
-
-        // Connect to server
-        // TODO: Refactor to handle if ethernet (or anything else) is unplugged while waiting for connection.
-        // TODO: Similar change to all other spots where we wait for something.
-        Serial.println("Waiting for connection...");
-        while (!client.Connected()) {
-            client.Connect(remote_ip, remote_port);
-            EthernetMgr.Refresh();
-        }
-        Serial.println("Connection established!");
-
-        // Let the server know we're here.
-        dispatchEvent("connection established", String(millis() - connection_lost_timestamp));
-        // After connecting, we should send the current state of all IO and motors.
-    }
-    // Must call these regularly to keep the ethernet manager running.
-    client.Flush();
-    EthernetMgr.Refresh();
-}
-
-// Recover if CCIO-8 link is broken. Also logs a warning if the number of CCIO-8 boards changes.
-void maintainCCIO()
-{
-    // Reestablish the CCIO-8 link if it is broken.
-    if (CcioMgr.LinkBroken()) {
-        uint32_t connection_lost_timestamp = millis();
-
-        // Immediately stop all motors.
-        for (const auto& motorPair : motors) {
-            motorPair.second->MoveStopAbrupt();
-        }
-
-        dispatchEvent("CCIO expansion board disconnected");
-        Serial.println("The CCIO-8 link is broken!");
-        // Make sure the CCIO-8 link is established.
-        while (CcioMgr.LinkBroken()) { }
-        Serial.println("The CCIO-8 link is online again!");
-        dispatchEvent("CCIO expansion board reconnected", String(millis() - connection_lost_timestamp));
-    }
-    // Log a warning if the number of CCIO-8 boards changes.
-    uint8_t newBoardCount = CcioMgr.CcioCount();
-    if (ccioBoardCount != newBoardCount) {
-        dispatchEvent("Warning", "CCIO-8 board count changed at runtime!");
-        ccioBoardCount = newBoardCount;
-    }
-}
-
 std::map<uint32_t, String> motorStatusStrings = {
     { 1 << 0, "AtTargetPosition" },
     { 1 << 1, "StepsActive" },
@@ -345,7 +296,7 @@ std::map<uint32_t, String> alertStrings = {
 
 // Dispatch MotorStatus events for any changes to StatusReg, HlfbState, or ReadyState.
 // Maybe need to monitor alert register?
-void motorStatus()
+void monitorMotorStatus()
 {
     uint32_t statusRisen;
     uint32_t statusFallen;
@@ -405,44 +356,6 @@ void motorStatus()
     }
 }
 
-// Dispatch event for any IO that has changed since last call.
-void monitorIO()
-{
-    uint32_t statusRisen = InputMgr.InputsRisen().reg;
-    uint32_t statusFallen = InputMgr.InputsFallen().reg;
-    strMap status;
-
-    for (const auto& field : IOmap) {
-        bool risenBit = statusRisen & (1 << field.second.pin);
-        bool fallenBit = statusFallen & (1 << field.second.pin);
-
-        if (risenBit || fallenBit) {
-            status["attribute"] = field.first;
-            status["value"] = String(risenBit);
-            dispatchEvent("IOStatus", status);
-        }
-    }
-}
-
-// Dispatch event for any CCIO that has changed since last call.
-void monitorCCIO()
-{
-    uint32_t statusRisen = CcioMgr.InputsRisen();
-    uint32_t statusFallen = CcioMgr.InputsFallen();
-    strMap status;
-
-    for (const auto& field : CCIOmap) {
-        bool risenBit = statusRisen & (1 << field.second.pin);
-        bool fallenBit = statusFallen & (1 << field.second.pin);
-
-        if (risenBit || fallenBit) {
-            status["attribute"] = field.first;
-            status["value"] = String(risenBit);
-            dispatchEvent("IOStatus", status);
-        }
-    }
-}
-
 // Dispatch single event with all info on a motor's current status.
 void getMotorStatus(String motorName)
 {
@@ -483,4 +396,135 @@ void getMotorStatus(String motorName)
     };
 
     dispatchEvent("MotorStatus", status);
+}
+
+// Recover if connection lost or cable unplugged.
+void maintainEthernet()
+{
+    // Physical ethernet cable
+    if (!EthernetMgr.PhyLinkActive()) {
+        Serial.println("The Ethernet cable is unplugged...");
+        client.Close(); // Just to be sure
+        while (!EthernetMgr.PhyLinkActive()) { }
+        Serial.println("Ethernet cable plugged in");
+    }
+
+    if (!client.Connected()) {
+        uint32_t connection_lost_timestamp = millis();
+        client.Close(); // Just to be sure
+
+        // Immediately stop all motors.
+        for (const auto& motorPair : motors) {
+            motorPair.second->MoveStopAbrupt();
+        }
+
+        // Connect to server
+        // TODO: Refactor to handle if ethernet (or anything else) is unplugged while waiting for connection.
+        // TODO: Similar change to all other spots where we wait for something.
+        Serial.println("Waiting for connection...");
+        while (!client.Connected()) {
+            client.Connect(remote_ip, remote_port);
+            EthernetMgr.Refresh();
+        }
+        Serial.println("Connection established!");
+
+        // Let the server know we're here.
+        dispatchEvent("connection established", String(millis() - connection_lost_timestamp));
+        // After connecting, we should send the current state of all IO and motors.
+        // strMap data = {
+        //         {"IO", IOname},
+        //         {"VALUE", String(digitalRead(IOmap[IOname].pin))}
+        //     };
+        //     dispatchEvent("IO_STATUS", data);
+        // first loop through all IO and send their status
+        for (const auto& IOpair : IOmap) {
+            strMap data = {
+                { "IO", IOpair.first },
+                { "VALUE", String(digitalRead(IOpair.second.pin)) }
+            };
+            dispatchEvent("IO_STATUS", data);
+        }
+        // then all CCIO-8 boards
+        for (const auto& ccioPair : CCIOmap) {
+            strMap data = {
+                { "IO", String(ccioPair.first) },
+                { "VALUE", String(digitalRead(ccioPair.second.pin)) }
+            };
+            dispatchEvent("IO_STATUS", data);
+        }
+        // Then all motors
+        // for each motor name, call getMotorStatus
+        for (const auto& motorPair : motors) {
+            getMotorStatus(motorPair.first);
+        }
+
+    }
+    // Must call these regularly to keep the ethernet manager running.
+    client.Flush();
+    EthernetMgr.Refresh();
+}
+
+// Recover if CCIO-8 link is broken. Also logs a warning if the number of CCIO-8 boards changes.
+void maintainCCIO()
+{
+    // Reestablish the CCIO-8 link if it is broken.
+    if (CcioMgr.LinkBroken()) {
+        uint32_t connection_lost_timestamp = millis();
+
+        // Immediately stop all motors.
+        for (const auto& motorPair : motors) {
+            motorPair.second->MoveStopAbrupt();
+        }
+
+        dispatchEvent("CCIO expansion board disconnected");
+        Serial.println("The CCIO-8 link is broken!");
+        // Make sure the CCIO-8 link is established.
+        while (CcioMgr.LinkBroken()) { }
+        Serial.println("The CCIO-8 link is online again!");
+        dispatchEvent("CCIO expansion board reconnected", String(millis() - connection_lost_timestamp));
+    }
+    // Log a warning if the number of CCIO-8 boards changes.
+    uint8_t newBoardCount = CcioMgr.CcioCount();
+    if (ccioBoardCount != newBoardCount) {
+        dispatchEvent("Warning", "CCIO-8 board count changed at runtime!");
+        ccioBoardCount = newBoardCount;
+    }
+}
+
+// Dispatch event for any IO that has changed since last call.
+void monitorIO()
+{
+    uint32_t statusRisen = InputMgr.InputsRisen().reg;
+    uint32_t statusFallen = InputMgr.InputsFallen().reg;
+    strMap status;
+
+    for (const auto& field : IOmap) {
+        bool risenBit = statusRisen & (1 << field.second.pin);
+        bool fallenBit = statusFallen & (1 << field.second.pin);
+
+        if (risenBit || fallenBit) {
+            status["attribute"] = field.first;
+            status["value"] = String(risenBit);
+            dispatchEvent("IOStatus", status);
+        }
+    }
+}
+
+// Dispatch event for any CCIO that has changed since last call.
+void monitorCCIO()
+{
+    uint32_t statusRisen = CcioMgr.InputsRisen();
+    uint32_t statusFallen = CcioMgr.InputsFallen();
+    strMap status;
+
+    for (const auto& field : CCIOmap) {
+        bool risenBit = statusRisen & (1 << field.second.pin);
+        bool fallenBit = statusFallen & (1 << field.second.pin);
+
+        if (risenBit || fallenBit) {
+            status["attribute"] = field.first;
+            status["value"] = String(risenBit);
+            dispatchEvent("IOStatus", status);
+        }
+    }
 }
