@@ -61,9 +61,24 @@ void handleEvent(strMap event) {
                 dispatchEvent("WARNING", motorName + " is not enabled");
                 return;
             }
+            // check that a VELOCITY is provided
+            if (event.count("VELOCITY") == 0) {
+                dispatchEvent("WARNING", "VELOCITY not provided");
+                return;
+            }
+            // check that a ACCELERATION is provided
+            if (event.count("ACCELERATION") == 0) {
+                dispatchEvent("WARNING", "ACCELERATION not provided");
+                return;
+            }
+            int velocity = event["VELOCITY"].toInt();
+            int acceleration = event["ACCELERATION"].toInt();
+            motor->VelMax(velocity);
+            motor->AccelMax(acceleration);
 
             if (command == "MOTOR_MOVE_ABSOLUTE") {
                 int position = event["POSITION"].toInt();
+                // If ACCELERATION is specified, use it, otherwise use the default
                 motor->Move(position, MotorDriver::MOVE_TARGET_ABSOLUTE);
 
             } else if (command == "MOTOR_MOVE_RELATIVE") {
