@@ -1,5 +1,5 @@
 {
     "board": "ClearCore:sam:clearcore",
     "sketch": "BeforeWMRewrite\\BeforeWMRewrite.ino",
-    "port": "COM3"
+    "port": "COM7"
 }

@@ -18,10 +18,10 @@ int serial_baud = 9600;
 
 // mapping motor names to their clearcore driver
 std::map<String, MotorDriver*> motors = {
-    {"60in Transfer Conveyor", &ConnectorM0},
-    {"Upper Lift Conveyor", &ConnectorM1},
-    {"Lower Lift Conveyor", &ConnectorM2},
-    {"54in Transfer Conveyor", &ConnectorM3}
+    {"60IN TRANSFER CONVEYOR", &ConnectorM0},
+    {"UPPER LIFT CONVEYOR", &ConnectorM1},
+    {"LOWER LIFT CONVEYOR", &ConnectorM2},
+    {"54IN TRANSFER CONVEYOR", &ConnectorM3}
 };
 
 // mapping io names to their pin
