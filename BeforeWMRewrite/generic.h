@@ -94,8 +94,6 @@ void setupMotors()
     // Sets the max velocity and acceleration for distance move and enable each motor.
     uint8_t i = 0;
     for (const auto& motorPair : motors) {
-        motorPair.second->VelMax(velocities[i]);
-        motorPair.second->AccelMax(accelerationLimit[i]);
         motorPair.second->EnableRequest(true);
         Serial.print("Motor: ");
         Serial.print(motorPair.first.c_str()); // Assuming you want to print the motor name instead of the index
