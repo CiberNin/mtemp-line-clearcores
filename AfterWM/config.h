@@ -18,27 +18,10 @@ int serial_baud = 9600;
 
 // mapping motor names to their clearcore driver
 std::map<String, MotorDriver*> motors = {
-    {"Lift Conveyor", &ConnectorM0},
-    {"30in Transfer Conveyor", &ConnectorM1},
+    {"LIFT CONVEYOR", &ConnectorM0},
+    {"30IN TRANSFER CONVEYOR", &ConnectorM1},
     // {"n/a", &ConnectorM2},
     // {"n/a", &ConnectorM3}
-};
-// Should we make it possible to edit these at runtime?
-// Should we pack these with the motor definitions?
-// Define the velocity used for relative and absolute moves.
-// Could pack in all configs like limit & estop pins
-uint32_t velocities[] = {
-    53333,
-    53333,
-    // 12147,
-    // 53333
-};
-// Define the acceleration used for all moves.
-uint32_t accelerationLimit[] = {
-    106666,
-    106666,
-    // 48587,
-    // 80000
 };
 
 // mapping io names to their pin
@@ -50,13 +33,11 @@ struct IOInfo {
     PinMode mode;
 };
 
-
-
 std::map<String, IOInfo> IOmap = {
-    {"Raise Lift", {IO0, OUTPUT}},
-    {"Lift Is Up", {IO1, INPUT}},
-    {"Lift Is Down", {IO2, INPUT}},
-    {"Glass Exiting Washer", {IO3, INPUT}},
+    {"RAISE LIFT", {IO0, OUTPUT}},
+    {"LIFT IS UP", {IO1, INPUT}},
+    {"LIFT IS DOWN", {IO2, INPUT}},
+    {"GLASS EXITING WASHER", {IO3, INPUT}},
     // {"", {IO4, INPUT}},
     // {"", {IO5, INPUT}},
     // {"", {DI6, INPUT}},

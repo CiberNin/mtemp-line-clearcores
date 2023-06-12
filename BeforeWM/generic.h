@@ -94,8 +94,6 @@ void setupMotors()
     // Sets the max velocity and acceleration for distance move and enable each motor.
     uint8_t i = 0;
     for (const auto& motorPair : motors) {
-        motorPair.second->VelMax(velocities[i]);
-        motorPair.second->AccelMax(accelerationLimit[i]);
         motorPair.second->EnableRequest(true);
         Serial.print("Motor: ");
         Serial.print(motorPair.first.c_str()); // Assuming you want to print the motor name instead of the index
@@ -263,7 +261,12 @@ std::map<uint32_t, String> motorStatusStrings = {
     { 1 << 4, "MotorInFault" },
     { 1 << 5, "Enabled" },
     { 1 << 6, "PositionalMove" },
+    // bits 7 and 8 are used 
+    // for the HLFB mask
     { 1 << 9, "AlertsPresent" },
+    // bits 10-12 are used for the
+    // motor ready state
+    //
     { 1 << 13, "Triggering" },
     { 1 << 14, "InPositiveLimit" },
     { 1 << 15, "InNegativeLimit" },

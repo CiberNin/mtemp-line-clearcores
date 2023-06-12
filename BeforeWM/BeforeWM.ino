@@ -4,6 +4,13 @@ void handleEvent(strMap event) {
     // Add a command for enabling / disabling a blinky output?
     // Add command to dump list of defined io/motors?
     // Way to set the velocity and acceleration of a motor?
+
+    // Iterate through event and print all key/value pairs
+    // for (strMap::iterator it = event.begin(); it != event.end(); ++it) {
+    //     Serial.print(it->first);
+    //     Serial.print(" ");
+    //     Serial.println(it->second);
+    // }
     String command = event["COMMAND"];
     if (command == "RESET") {
         SysMgr.ResetBoard();
@@ -21,6 +28,10 @@ void handleEvent(strMap event) {
                 dispatchEvent("WARNING", IOname + " is not an output");
                 return;
             }
+            // Serial.print("IO_SET ");
+            // Serial.print(IOname);
+            // Serial.print(" ");
+            // Serial.println(event["VALUE"]);
             digitalWrite(info.pin, (event["VALUE"] == "1"));
 
         } else if (command == "IO_GET") {
@@ -43,16 +54,31 @@ void handleEvent(strMap event) {
         if (command == "MOTOR_RESET_ALERTS") {
             motor->ClearAlerts();
         } else if (command == "MOTOR_STATUS") {
-            getMotorStatus(motorName); // would make more sense to have it return the status and then dispatch the event here
+            getMotorStatus(motorName);
         } else if (command.indexOf("MOVE") != -1) {
             // check if motor is enabled
             if (!motor->StatusReg().bit.Enabled) {
                 dispatchEvent("WARNING", motorName + " is not enabled");
                 return;
             }
+            // check that a VELOCITY is provided
+            if (event.count("VELOCITY") == 0) {
+                dispatchEvent("WARNING", "VELOCITY not provided");
+                return;
+            }
+            // check that a ACCELERATION is provided
+            if (event.count("ACCELERATION") == 0) {
+                dispatchEvent("WARNING", "ACCELERATION not provided");
+                return;
+            }
+            int velocity = event["VELOCITY"].toInt();
+            int acceleration = event["ACCELERATION"].toInt();
+            motor->VelMax(velocity);
+            motor->AccelMax(acceleration);
 
             if (command == "MOTOR_MOVE_ABSOLUTE") {
                 int position = event["POSITION"].toInt();
+                // If ACCELERATION is specified, use it, otherwise use the default
                 motor->Move(position, MotorDriver::MOVE_TARGET_ABSOLUTE);
 
             } else if (command == "MOTOR_MOVE_RELATIVE") {
@@ -73,13 +99,9 @@ void handleEvent(strMap event) {
 
 
 void setup() {
-    Serial.begin(9600);
     // Wait for serial to initialize or timeout after 5 seconds.
-    unsigned long start = millis();
-    while (!Serial && millis() - start < 5000) {}
-    Serial.println("Setup starting");
-    
     setupConnectivity();
+    Serial.println("Setup starting");
     setupIO();
     // setupCCIO();
     setupMotors();
@@ -93,6 +115,6 @@ void loop() {
     monitorIO();
     // monitorCCIO();
     events.processInput(handleEvent);
-    status.sendStatus();
+    // status.sendStatus();
 }
 
