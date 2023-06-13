@@ -360,6 +360,7 @@ void monitorMotorStatus()
 }
 
 // Dispatch single event with all info on a motor's current status.
+// TODO: Regularize IO and Motor status so that many changes can be packed in a single message.
 void getMotorStatus(String motorName)
 {
     if (motors.find(motorName) == motors.end()) {
