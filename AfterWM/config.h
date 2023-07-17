@@ -18,7 +18,7 @@ int serial_baud = 9600;
 
 // mapping motor names to their clearcore driver
 std::map<String, MotorDriver*> motors = {
-    {"LIFT CONVEYOR", &ConnectorM0},
+    {"EXIT LIFT CONVEYOR", &ConnectorM0},
     {"30IN TRANSFER CONVEYOR", &ConnectorM1},
     // {"n/a", &ConnectorM2},
     // {"n/a", &ConnectorM3}
@@ -38,7 +38,7 @@ std::map<String, IOInfo> IOmap = {
     {"LIFT IS UP", {IO1, INPUT}},
     {"LIFT IS DOWN", {IO2, INPUT}},
     {"GLASS EXITING WASHER", {IO3, INPUT}},
-    // {"", {IO4, INPUT}},
+    {"ESTOP", {IO4, INPUT}},
     // {"", {IO5, INPUT}},
     // {"", {DI6, INPUT}},
     // {"", {DI7, INPUT}},
