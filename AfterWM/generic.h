@@ -17,6 +17,14 @@ enum LogLevel { NOTSET,
     CRITICAL };
 const String log_level_strings[] = { "NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL" };
 
+void ESTOP_interrupt()
+{
+    // Immediately stop all motors.
+    for (const auto& motorPair : motors) {
+        motorPair.second->MoveStopAbrupt();
+    }
+}
+
 // Perform initialization of the Ethernet & Serial connections.
 void setupConnectivity()
 {
@@ -25,7 +33,7 @@ void setupConnectivity()
     EthernetMgr.LocalIp(local);
     EthernetMgr.NetmaskIp(netmask);
     EthernetMgr.GatewayIp(gateway);
-    EthernetMgr.DnsIp(dns);
+    // EthernetMgr.DnsIp(dns);
     // Serial
     Serial.begin(serial_baud);
     unsigned long start = millis();
@@ -34,15 +42,15 @@ void setupConnectivity()
     Serial.print(" Local IP: ");
     Serial.println(local.StringValue());
     Serial.print(" Remote IP: ");
-    Serial.print(remote_ip);
+    Serial.print(remote_ip.StringValue());
     Serial.print(" Remote Port: ");
     Serial.println(remote_port);
     Serial.print(" Netmask: ");
     Serial.println(netmask.StringValue());
     Serial.print(" Gateway: ");
     Serial.println(gateway.StringValue());
-    Serial.print(" DNS: ");
-    Serial.println(dns.StringValue());
+    // Serial.print(" DNS: ");
+    // Serial.println(dns.StringValue());
 
 
 }
@@ -100,6 +108,8 @@ void setupMotors()
         Serial.println(" is ready.");
         i++;
     }
+
+    attachInterrupt(digitalPinToInterrupt(IOmap["ESTOP"].pin), ESTOP_interrupt, FALLING);
 }
 
 // Convert a strMap to a JSON string.
@@ -347,6 +357,9 @@ void monitorMotorStatus()
                 status["attribute"] = "Position";
                 status["value"] = String(motor->PositionRefCommanded());
                 dispatchEvent("MotorStatus", status);
+                status["attribute"] = "Velocity";
+                status["value"] = String(motor->VelocityRefCommanded());
+                dispatchEvent("MotorStatus", status);
             }
         }
 
@@ -360,7 +373,6 @@ void monitorMotorStatus()
 }
 
 // Dispatch single event with all info on a motor's current status.
-// TODO: Regularize IO and Motor status so that many changes can be packed in a single message.
 void getMotorStatus(String motorName)
 {
     if (motors.find(motorName) == motors.end()) {

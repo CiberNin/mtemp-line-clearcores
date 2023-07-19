@@ -36,9 +36,9 @@ struct IOInfo {
 std::map<String, IOInfo> IOmap = {
     {"RAISE LIFT", {IO0, OUTPUT}},
     {"ENABLE BATCH WARNING LIGHT", {IO1, OUTPUT}},
-    {"ASMLASTPART", {IO2, OUTPUT}},
-    {"ASMMOVESDONE", {IO3, OUTPUT}},
-    // {"", {IO4, INPUT}},
+    {"ASM INDEX COMPLETE", {IO2, OUTPUT}},
+    // {"ASMMOVESDONE", {IO3, OUTPUT}},
+    {"ESTOP", {IO4, INPUT}},
     // {"", {IO5, INPUT}},
     {"MTEMP MOTOR ON", {DI6, INPUT}},
     {"MTEMP DOOR OPEN", {DI7, INPUT}},

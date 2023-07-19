@@ -1,5 +1,5 @@
 {
     "board": "ClearCore:sam:clearcore",
     "sketch": "AfterWM\\AfterWM.ino",
-    "port": "COM7"
+    "port": "COM3"
 }
