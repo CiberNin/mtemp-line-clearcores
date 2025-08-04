@@ -37,9 +37,9 @@ std::map<String, IOInfo> IOmap = {
     {"RAISE LIFT", {IO0, OUTPUT}},
     {"LIFT IS UP", {IO1, INPUT}},
     {"LIFT IS DOWN", {IO2, INPUT}},
-    {"GLASS EXITING WASHER", {IO3, INPUT}},
+    {"LIFT END GLASS SENSOR", {IO3, INPUT}},// Sensor located at the end of the lift. Unreliable. Not used anymore.
     {"ESTOP", {IO4, INPUT}},
-    // {"", {IO5, INPUT}},
+    {"LIFT START GLASS SENSOR", {IO5, INPUT}},// Sensor located between end of washer & start of lift.
     // {"", {DI6, INPUT}},
     // {"", {DI7, INPUT}},
     // {"", {DI8, INPUT}},
